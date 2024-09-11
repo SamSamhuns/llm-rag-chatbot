@@ -7,7 +7,6 @@ Backend with fastapi+uvicorn for omni chat.
     - [1. Create .env file](#1-create-env-file)
     - [2. Create shared volumes directory](#2-create-shared-volumes-directory)
     - [3. Create keyfile for mongo partition security](#3-create-keyfile-for-mongo-partition-security)
-      - [Note:](#note)
     - [Docker Compose Setup for Deployment](#docker-compose-setup-for-deployment)
     - [Local Setup for Development](#local-setup-for-development)
       - [i) Uvicorn server with fastapi with Docker](#i-uvicorn-server-with-fastapi-with-docker)
@@ -21,7 +20,7 @@ Backend with fastapi+uvicorn for omni chat.
     - [Convert llama hf model to vicuna model](#convert-llama-hf-model-to-vicuna-model)
     - [To run the Vicuna model in the terminal as an interactive CLI session](#to-run-the-vicuna-model-in-the-terminal-as-an-interactive-cli-session)
     - [To run the Vicuna model as a fastapi endpoint server compatible with the openai API](#to-run-the-vicuna-model-as-a-fastapi-endpoint-server-compatible-with-the-openai-api)
-    - [Notes on LLM RAG](#notes-on-llm-rag)
+  - [Notes on LLM RAG](#notes-on-llm-rag)
 
 
 ## Setup
@@ -73,7 +72,7 @@ openssl rand -base64 756 > .docker/mongo/replica.key
 chmod 400 .docker/mongo/replica.key
 ```
 
-#### Note:
+**Note:**
 
 When changing settings in `docker-compose.yml` for the mongodb service, the existing docker and shared volumes might have to be purged i.e. when changing replicaset name.
 
@@ -193,8 +192,7 @@ coverage report -m -i
 
 ## TODO
 
--   Fix vector database to use
--   Use redis for caching if possible
+-   Update docker-compose information to use the official package
 
 ## Chat completion endpoint with fschat Vicuna 13B
 
@@ -255,7 +253,7 @@ Run fastchat fastapi server with openai compatible apis:
 python3 -m fastchat.serve.openai_api_server --port=8002
 ```
 
-### Notes on LLM RAG
+## Notes on LLM RAG
 
 -   1. What You Put in the DB Really Impacts Performance
 
@@ -277,9 +275,13 @@ DEFAULT_TEXT_QA_PROMPT_TMPL = (
 )
 That being said, if you ask dumbass questions like "Who won the 1976 Super Bowl?" or "What's a good recipe for a margarita?" it would cheerfully respond with an answer. We had to experiment for days to get a prompt that forced these darn models to only answer from context and otherwise say "There's no relevant information and so I can't answer."
 
--   3. Never use openAI embeddings for RAG. Use local embeddings, in MTEB benchmarks they do much better than openAI’s embeddings. If you are ok with sending your document to openAI (not concerned with privacy) better send the search query and locally searched few chunks of data to GPT-4 rather than sending whole dataset and the query (for tokenizing) to OpenAI for embedding. Also, if they no longer support tokenizing using text-embedding-ada-002 like they did with text-embedding-ada-001 recently, your local database is paperweight. You get the best of embeddings with local embedding and the best of AI with GPT-4 if you had done the reverse.
+-   3. Text Embedding choices matter
 
--   4. Don’t JUST use semantic search using cosine similarity using embeddings. I found that it doesn’t work in edge cases. What works better is selecting 4 chunks from embedding search and 4 chunks from good old lexical search (bm25+). It performs very well.
+Never use openAI embeddings for RAG. Use local embeddings, in MTEB benchmarks they do much better than openAI’s embeddings. If you are ok with sending your document to openAI (not concerned with privacy) better send the search query and locally searched few chunks of data to GPT-4 rather than sending whole dataset and the query (for tokenizing) to OpenAI for embedding. Also, if they no longer support tokenizing using text-embedding-ada-002 like they did with text-embedding-ada-001 recently, your local database is paperweight. You get the best of embeddings with local embedding and the best of AI with GPT-4 if you had done the reverse.
+
+-   4. Semantic search using cosine similarity using embeddings works better than lexical search (bm25+)
+   
+Don’t JUST use semantic search using cosine similarity using embeddings. I found that it doesn’t work in edge cases. What works better is selecting 4 chunks from embedding search and 4 chunks from good old lexical search (bm25+). It performs very well.
 
 -   5. Sending one chunk on each side of selected chunks to provide more context works better.
 
