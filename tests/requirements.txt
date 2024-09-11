@@ -1,0 +1,12 @@
+beautifulsoup4==4.12.2
+chromedriver-autoinstaller==0.4.0
+coverage==7.2.3
+httpx==0.24.0
+pytest==7.3.1
+pytest-asyncio==0.21.0
+pytest-cov==4.0.0
+pytest-testmon==2.0.6
+pytest-order==1.1.0
+requests==2.31.0
+requirements-parser==0.5.0
+selenium==4.9.1
