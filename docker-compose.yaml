@@ -1,6 +1,3 @@
-version: '3.9'
-
-
 services:
   chatbot_backend:
     container_name: chatbot_backend_cont

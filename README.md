@@ -9,25 +9,17 @@ Backend with fastapi+uvicorn for omni chat.
     - [3. Create keyfile for mongo partition security](#3-create-keyfile-for-mongo-partition-security)
     - [Docker Compose Setup for Deployment](#docker-compose-setup-for-deployment)
     - [Local Setup for Development](#local-setup-for-development)
-      - [i) Uvicorn server with fastapi with Docker](#i-uvicorn-server-with-fastapi-with-docker)
-      - [Or, ii) Uvicorn server with fastapi in local system](#or-ii-uvicorn-server-with-fastapi-in-local-system)
-      - [Optionally expose app through ngrok docker for sharing localhost on the internet](#optionally-expose-app-through-ngrok-docker-for-sharing-localhost-on-the-internet)
+      - [Option i) Uvicorn server with fastapi with Docker](#option-i-uvicorn-server-with-fastapi-with-docker)
+      - [Option ii) Uvicorn server with fastapi in local system](#option-ii-uvicorn-server-with-fastapi-in-local-system)
+    - [Optionally expose app through ngrok docker for sharing localhost on the internet](#optionally-expose-app-through-ngrok-docker-for-sharing-localhost-on-the-internet)
   - [Testing](#testing)
-  - [TODO](#todo)
-  - [Chat completion endpoint with fschat Vicuna 13B](#chat-completion-endpoint-with-fschat-vicuna-13b)
-    - [Download llama models](#download-llama-models)
-    - [Convert llama model to hf format](#convert-llama-model-to-hf-format)
-    - [Convert llama hf model to vicuna model](#convert-llama-hf-model-to-vicuna-model)
-    - [To run the Vicuna model in the terminal as an interactive CLI session](#to-run-the-vicuna-model-in-the-terminal-as-an-interactive-cli-session)
-    - [To run the Vicuna model as a fastapi endpoint server compatible with the openai API](#to-run-the-vicuna-model-as-a-fastapi-endpoint-server-compatible-with-the-openai-api)
   - [Notes on LLM RAG](#notes-on-llm-rag)
-
 
 ## Setup
 
 ### 1. Create .env file
 
-Create a `.env` file in the same directory as the `docker-compose.yml` file with the following keys with updated values for unames and pass:
+Create a `.env` file in the same directory as the `docker-compose.yaml` file with the following keys with updated values for unames and pass:
 
 ```yaml
 # set to False for deployment
@@ -67,14 +59,14 @@ mkdir -p volumes/chatbot_backend
 ### 3. Create keyfile for mongo partition security
 
 ```shell
-mkdir -p .docker/mongo/replica.key
+mkdir -p .docker/mongo
 openssl rand -base64 756 > .docker/mongo/replica.key
 chmod 400 .docker/mongo/replica.key
 ```
 
 **Note:**
 
-When changing settings in `docker-compose.yml` for the mongodb service, the existing docker and shared volumes might have to be purged i.e. when changing replicaset name.
+When changing settings in `docker-compose.yaml` for the mongodb service, the existing docker and shared volumes might have to be purged i.e. when changing replicaset name.
 
 <p style="color:red;">WARNING: This will delete all existing user, document, and vector records.</p> 
 
@@ -86,13 +78,15 @@ rm -rf volumes
 
 ### Docker Compose Setup for Deployment
 
+There are two options for running the analysis service. Both require `docker compose` (Available from the [official docker site](https://docs.docker.com/compose/install/)). `$docker-compose ...` style commands have been depreciated.
+
 Note: some services are set to bind to all addresses which should be changed in a production environment.
 
 ```shell
 # build all required containers
-docker-compose build
+docker compose build
 # start all services
-docker-compose up -d
+docker compose up -d
 ```
 
 The server will be available at <http://localhost:8080> if using the default port.
@@ -103,13 +97,13 @@ Start all background database and other required services.
 
 ```shell
 # build all required containers
-docker-compose build
-docker-compose up -d hf_text_embedding_api etcd minio standalone attu mongod1 mongo-setup mongo-express
+docker compose build
+docker compose up -d hf_text_embedding_api etcd minio standalone attu mongod1 mongo-setup mongo-express
 ```
 
 Then use either i) Docker or ii) a local system setup to start the uvicorn+fastapi server.
 
-#### i) Uvicorn server with fastapi with Docker
+#### Option i) Uvicorn server with fastapi with Docker
 
 Build server container
 
@@ -125,9 +119,9 @@ bash scripts/run_docker.sh -p EXPOSED_HTTP_PORT
 
 The server will be available at <http://localhost:8080> if using the default port.
 
-#### Or, ii) Uvicorn server with fastapi in local system
+#### Option ii) Uvicorn server with fastapi in local system
 
-To properly resolve host-names in `.env`, the container service names in `docker-compose.yml` following must be added to `/etc/hosts` in the local system. This is not required when the fastapi-server is running inside a docker container.
+To properly resolve host-names in `.env`, the container service names in `docker-compose.yaml` following must be added to `/etc/hosts` in the local system. This is not required when the fastapi-server is running inside a docker container.
 
 ```shell
 127.0.0.1  mongod1
@@ -152,7 +146,7 @@ python app/server.py -p EXPOSED_HTTP_PORT
 
 The server will be available at <http://localhost:8080> if using the default port.
 
-#### Optionally expose app through ngrok docker for sharing localhost on the internet
+### Optionally expose app through ngrok docker for sharing localhost on the internet
 
 WARNING: Never use for production
 
@@ -188,69 +182,6 @@ Generating coverage reports
 ```shell
 coverage run -m pytest tests/
 coverage report -m -i
-```
-
-## TODO
-
--   Update docker-compose information to use the official package
-
-## Chat completion endpoint with fschat Vicuna 13B
-
-Use fastchat's API which can use OpenAI-compatible RESTful APIs
-Vicuna can be used as a drop-in replacement
-
-Vicuna README: <https://github.com/lm-sys/FastChat/tree/main>
-
-### Download llama models 
-
-Instructions from <https://huggingface.co/docs/transformers/main/model_doc/llama>
-
-### Convert llama model to hf format
-
-<https://huggingface.co/docs/transformers/main/model_doc/llama>
-
-```shell
-python convert_llama_weights_to_hf.py \
-    --input_dir /home/mluser/sam/llama/weights --model_size 13B --output_dir llama13b
-```
-
-### Convert llama hf model to vicuna model
-
-```shell
-python3 -m fastchat.model.apply_delta \
-    --base-model-path llama13b \
-    --target-model-path vicuna-13b \
-    --delta-path lmsys/vicuna-13b-delta-v1.1
-```
-
-### To run the Vicuna model in the terminal as an interactive CLI session
-
-```shell
-# for the fastchat t5 model
-python3 -m fastchat.serve.cli --model-path lmsys/fastchat-t5-3b-v1.0
-# or for the vicuna 13b model
-python3 -m fastchat.serve.cli --model-path vicuna-13b
-```
-
-### To run the Vicuna model as a fastapi endpoint server compatible with the openai API
-
-Launch the controller:
-
-```shell
-python3 -m fastchat.serve.controller
-```
-
-This controller manages the distributed workers:
-
-Launch the model worker(s)
-```shell
-python -m fastchat.serve.model_worker --model-path=vicuna-13b
-```
-
-Run fastchat fastapi server with openai compatible apis:
-
-```shell
-python3 -m fastchat.serve.openai_api_server --port=8002
 ```
 
 ## Notes on LLM RAG
