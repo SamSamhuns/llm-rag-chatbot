@@ -62,6 +62,7 @@ mkdir -p volumes/chatbot_backend
 mkdir -p .docker/mongo
 openssl rand -base64 756 > .docker/mongo/replica.key
 chmod 400 .docker/mongo/replica.key
+chown 999:999 .docker/mongo/replica.key
 ```
 
 **Note:**
