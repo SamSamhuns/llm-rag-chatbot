@@ -4,6 +4,7 @@ FROM --platform=linux/amd64 python:3.9
 RUN apt-get update --no-install-recommends \
     && apt-get install libsm6 libxext6 libgl1-mesa-glx python3-venv --no-install-recommends -y
 
+# download chrome to use chromedrive
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 RUN if [[ "$(uname -m)" == "x86_64" ]] ; then apt install ./google-chrome-stable_current_amd64.deb -y; else echo Non x86_64 systems do not support chrome deb ; fi
 RUN rm ./google-chrome-stable_current_amd64.deb
